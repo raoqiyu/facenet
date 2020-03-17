@@ -1,0 +1,62 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: rqy-gcn-test
+  namespace: tensorflow
+  labels:
+    app: rqy-gcn-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rqy-gcn-test
+  template:
+    metadata:
+      labels:
+        app: rqy-gcn-test
+    spec:
+      containers:
+      - name: rqy-gcn-test
+        image: 10.19.140.200:29006/tf/raoqiyu:tf-1.6.0-gpu-py3
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: tsshared
+          mountPath: /tmp
+        - name: nvidialibs
+          mountPath: /opt/nvidia
+          readOnly: true
+        - name: nvidiatools
+          mountPath: /opt/tools
+          readOnly: true
+        resources:
+          requests:
+            alpha.kubernetes.io/nvidia-gpu: 1
+            cpu: 1
+            memory: 5Gi
+          limits:
+            alpha.kubernetes.io/nvidia-gpu: 1
+            cpu: 1
+            memory: 10Gi
+        env:
+        - name: CUDA_VISIBLE_DEVICES
+          value: '0,1'
+      #nodeSelector:
+      #    addition: GPU
+      volumes:
+      - name: tsshared
+        cephfs:
+          monitors:
+          - 10.19.137.144:6789
+          - 10.19.137.145:6789
+          - 10.19.137.146:6789
+          user: admin
+          path: /tensorflow/raoqiyu/ml/gcn
+          secretRef:
+            name: ceph-secret
+          readOnly: false
+      - name: nvidialibs
+        hostPath:
+          path: /opt/lib/nvidia
+      - name: nvidiatools
+        hostPath:
+          path: /opt/lib/tools

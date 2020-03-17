@@ -150,6 +150,9 @@ def main(args):
 
         embeddings = tf.nn.l2_normalize(prelogits, 1, 1e-10, name='embeddings')
 
+        g = tf.get_default_graph()
+        tf.contrib.quantize.create_training_graph(input_graph=g, quant_delay=0)
+
         # Norm for the prelogits
         eps = 1e-4
         prelogits_norm = tf.reduce_mean(tf.norm(tf.abs(prelogits)+eps, ord=args.prelogits_norm_p, axis=1))
@@ -182,13 +185,17 @@ def main(args):
         
         # Create a saver
         saver = tf.train.Saver(tf.trainable_variables(), max_to_keep=3)
+        saver_new = tf.train.Saver(max_to_keep=3)
+
 
         # Build the summary operation based on the TF collection of Summaries.
         summary_op = tf.summary.merge_all()
 
         # Start running operations on the Graph.
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=args.gpu_memory_fraction)
-        sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
+        # gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=args.gpu_memory_fraction)
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        sess = tf.Session(config=config)
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
         summary_writer = tf.summary.FileWriter(log_dir, sess.graph)
@@ -245,7 +252,7 @@ def main(args):
                 stat['time_validate'][epoch-1] = time.time() - t
 
                 # Save variables and the metagraph if it doesn't exist already
-                save_variables_and_metagraph(sess, saver, summary_writer, model_dir, subdir, epoch)
+                save_variables_and_metagraph(sess, saver_new, summary_writer, model_dir, subdir, epoch)
 
                 # Evaluate on LFW
                 t = time.time()
@@ -257,7 +264,7 @@ def main(args):
 
                 print('Saving statistics')
                 with h5py.File(stat_file_name, 'w') as f:
-                    for key, value in stat.iteritems():
+                    for key, value in stat.items():
                         f.create_dataset(key, data=value)
     
     return model_dir

@@ -35,6 +35,9 @@ import copy
 import argparse
 import facenet
 import align.detect_face
+from sklearn.metrics.pairwise import cosine_distances,cosine_similarity,euclidean_distances
+from PIL import Image
+
 
 def main(args):
 
@@ -61,7 +64,9 @@ def main(args):
             for i in range(nrof_images):
                 print('%1d: %s' % (i, args.image_files[i]))
             print('')
-            
+
+            print(euclidean_distances(emb,emb))
+
             # Print distance matrix
             print('Distance matrix')
             print('    ', end='')
@@ -109,6 +114,8 @@ def load_and_align_data(image_paths, image_size, margin, gpu_memory_fraction):
         aligned = misc.imresize(cropped, (image_size, image_size), interp='bilinear')
         prewhitened = facenet.prewhiten(aligned)
         img_list.append(prewhitened)
+        Image.fromarray(np.array(prewhitened).astype(np.uint8)).show()
+        Image.fromarray(np.array(aligned).astype(np.uint8)).show()
     images = np.stack(img_list)
     return images
 

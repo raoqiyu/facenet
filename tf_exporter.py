@@ -8,7 +8,7 @@ from nets.mobilenet import mobilenet_v2
 from tensorflow.python.framework import graph_util
 
 
-ckpt_file = "./model/20191106-094009/model-20191106-094009.ckpt-250"
+ckpt_file = "./model/20180402-114759/model-20180402-114759.ckpt-275"
 
 output_file = './facenet_mobilenet_lf.pb'
 

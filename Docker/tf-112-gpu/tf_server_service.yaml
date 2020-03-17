@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+    name: rqy-gcn-test
+    namespace: tensorflow
+    labels:
+        app: rqy-gcn-test
+spec:
+    selector:
+        app: rqy-gcn-test
+    type: NodePort
+    ports:
+    - name: flask-serving
+      port: 8888
+      targetPort: 8888
+
+

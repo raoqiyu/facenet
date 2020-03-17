@@ -27,7 +27,7 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
-sys.path.append('/home/rqy/Project/github/tensorflow/models/research/slim/')
+sys.path.append('/tmp/model/')
 print(sys.path)
 
 
@@ -174,8 +174,8 @@ def main(args):
 
         # Norm for the prelogits
         eps = 1e-4
-        prelogits_norm = tf.reduce_mean(tf.norm(tf.abs(prelogits)+eps, ord=args.prelogits_norm_p, axis=1))
-        tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES, prelogits_norm * args.prelogits_norm_loss_factor)
+        # prelogits_norm = tf.reduce_mean(tf.norm(tf.abs(prelogits)+eps, ord=args.prelogits_norm_p, axis=1))
+        # tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES, prelogits_norm * args.prelogits_norm_loss_factor)
 
         # Add center loss
         prelogits_center_loss, _ = facenet.center_loss(prelogits, label_batch, args.center_loss_alfa, nrof_classes)
@@ -236,7 +236,7 @@ def main(args):
                 'center_loss': np.zeros((nrof_steps,), np.float32),
                 'reg_loss': np.zeros((nrof_steps,), np.float32),
                 'xent_loss': np.zeros((nrof_steps,), np.float32),
-                'prelogits_norm': np.zeros((nrof_steps,), np.float32),
+                # 'prelogits_norm': np.zeros((nrof_steps,), np.float32),
                 'accuracy': np.zeros((nrof_steps,), np.float32),
                 'val_loss': np.zeros((nrof_val_samples,), np.float32),
                 'val_xent_loss': np.zeros((nrof_val_samples,), np.float32),
@@ -257,7 +257,7 @@ def main(args):
                     learning_rate_placeholder, batch_size_placeholder, control_placeholder, global_step,
                     total_loss, train_op, summary_op, summary_writer, regularization_losses, args.learning_rate_schedule_file,
                     stat, cross_entropy_mean, accuracy, learning_rate,
-                    prelogits, prelogits_center_loss, args.random_rotate, args.random_crop, args.random_flip, prelogits_norm, args.prelogits_hist_max, args.use_fixed_image_standardization)
+                    prelogits, prelogits_center_loss, args.random_rotate, args.random_crop, args.random_flip, None, args.prelogits_hist_max, args.use_fixed_image_standardization)
                 stat['time_train'][epoch-1] = time.time() - t
                 
                 if not cont:
@@ -351,19 +351,19 @@ def train(args, sess, epoch, image_list, label_list, index_dequeue_op, enqueue_o
     while batch_number < args.epoch_size:
         start_time = time.time()
         feed_dict = {learning_rate_placeholder: lr, batch_size_placeholder:args.batch_size}
-        tensor_list = [loss, train_op, step, reg_losses, prelogits, cross_entropy_mean, learning_rate, prelogits_norm, accuracy, prelogits_center_loss]
+        tensor_list = [loss, train_op, step, reg_losses, prelogits, cross_entropy_mean, learning_rate, accuracy, prelogits_center_loss]
         if batch_number % 100 == 0:
-            loss_, _, step_, reg_losses_, prelogits_, cross_entropy_mean_, lr_, prelogits_norm_, accuracy_, center_loss_, summary_str = sess.run(tensor_list + [summary_op], feed_dict=feed_dict)
+            loss_, _, step_, reg_losses_, prelogits_, cross_entropy_mean_, lr_, accuracy_, center_loss_, summary_str = sess.run(tensor_list + [summary_op], feed_dict=feed_dict)
             summary_writer.add_summary(summary_str, global_step=step_)
         else:
-            loss_, _, step_, reg_losses_, prelogits_, cross_entropy_mean_, lr_, prelogits_norm_, accuracy_, center_loss_ = sess.run(tensor_list, feed_dict=feed_dict)
+            loss_, _, step_, reg_losses_, prelogits_, cross_entropy_mean_, lr_, accuracy_, center_loss_ = sess.run(tensor_list, feed_dict=feed_dict)
          
         duration = time.time() - start_time
         stat['loss'][step_-1] = loss_
         stat['center_loss'][step_-1] = center_loss_
         stat['reg_loss'][step_-1] = np.sum(reg_losses_)
         stat['xent_loss'][step_-1] = cross_entropy_mean_
-        stat['prelogits_norm'][step_-1] = prelogits_norm_
+        # stat['prelogits_norm'][step_-1] = prelogits_norm_
         stat['learning_rate'][epoch-1] = lr_
         stat['accuracy'][step_-1] = accuracy_
         stat['prelogits_hist'][epoch-1,:] += np.histogram(np.minimum(np.abs(prelogits_), prelogits_hist_max), bins=1000, range=(0.0, prelogits_hist_max))[0]
